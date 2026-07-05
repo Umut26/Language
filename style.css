@@ -315,3 +315,37 @@ footer {
 }
 
 .hidden { display: none !important; }
+
+/* Tıklanabilir kelimeler */
+.w {
+  cursor: pointer;
+  border-bottom: 1px dotted var(--accent);
+  transition: background 0.15s ease;
+  border-radius: 3px;
+}
+
+.w:hover {
+  background: rgba(91, 140, 255, 0.12);
+}
+
+.word-tooltip {
+  position: absolute;
+  z-index: 1000;
+  background: var(--text);
+  color: var(--bg);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  max-width: 260px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.word-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

@@ -32,6 +32,52 @@ const categoryLabels = {
   engineering: "Mühendislik",
 };
 
+// ---- Kelime tıklama: metindeki her kelimeyi tıklanabilir yapar ----
+function translateWord(word) {
+  const key = word.toLowerCase();
+  if (GLOSSARY[key]) return GLOSSARY[key];
+  if (key.endsWith("'s") && GLOSSARY[key.slice(0, -2)]) {
+    return GLOSSARY[key.slice(0, -2)] + " (iyelik)";
+  }
+  return "çevirisi bulunamadı";
+}
+
+function wrapWords(text) {
+  return text.replace(/[A-Za-z]+(?:'[A-Za-z]+)?/g, (match) => {
+    return `<span class="w" data-word="${match.toLowerCase()}">${match}</span>`;
+  });
+}
+
+const wordTooltip = document.createElement("div");
+wordTooltip.className = "word-tooltip";
+document.body.appendChild(wordTooltip);
+
+function showWordTooltip(span, text) {
+  wordTooltip.textContent = text;
+  wordTooltip.classList.add("visible");
+  const rect = span.getBoundingClientRect();
+  const tooltipWidth = wordTooltip.offsetWidth;
+  const maxLeft = window.innerWidth - tooltipWidth - 8;
+  const left = Math.max(8, Math.min(rect.left + window.scrollX, maxLeft + window.scrollX));
+  wordTooltip.style.left = `${left}px`;
+  wordTooltip.style.top = `${rect.bottom + window.scrollY + 6}px`;
+}
+
+function hideWordTooltip() {
+  wordTooltip.classList.remove("visible");
+}
+
+document.addEventListener("click", (e) => {
+  const span = e.target.closest(".w");
+  if (!span) {
+    hideWordTooltip();
+    return;
+  }
+  e.stopPropagation();
+  const tr = span.dataset.tr || translateWord(span.dataset.word);
+  showWordTooltip(span, tr);
+});
+
 // ---- Sekme geçişi ----
 const tabButtons = document.querySelectorAll(".tab-btn");
 const tabPanels = document.querySelectorAll(".tab-panel");
@@ -47,6 +93,7 @@ tabButtons.forEach((btn) => {
     btn.classList.add("active");
     btn.setAttribute("aria-selected", "true");
     document.getElementById(btn.dataset.tab).classList.add("active");
+    hideWordTooltip();
 
     if (btn.dataset.tab !== "listening") {
       speechSynthesis.cancel();
@@ -67,7 +114,7 @@ function renderWordCard(item) {
   const card = document.createElement("div");
   card.className = "word-card";
   card.innerHTML = `
-    <p class="en-word">${item.word}</p>
+    <p class="en-word"><span class="w" data-tr="${item.tr}">${item.word}</span></p>
     <p class="tr-word ${toggleTr.checked ? "" : "hidden"}">${item.tr}</p>
     <div class="word-row">
       <span>Eş anlamlı:</span>
@@ -78,7 +125,7 @@ function renderWordCard(item) {
       <span class="chip-list">${item.ant.map((a) => `<span class="chip ant">${a}</span>`).join("")}</span>
     </div>
     <div class="example-box">
-      <p class="ex-en">"${item.ex}"</p>
+      <p class="ex-en">"${wrapWords(item.ex)}"</p>
       <p class="ex-tr ${toggleTr.checked ? "" : "hidden"}">${item.exTr}</p>
     </div>
   `;
@@ -115,9 +162,9 @@ function renderReading() {
   const [item] = getReadingBag(currentReadingFilter).draw(1);
   readingCard.innerHTML = `
     <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
-    <h2>${item.title}</h2>
+    <h2>${wrapWords(item.title)}</h2>
     <h3>${item.titleTr}</h3>
-    <p class="en-text">${item.en}</p>
+    <p class="en-text">${wrapWords(item.en)}</p>
     <p class="tr-text ${toggleReadingTr.checked ? "" : "hidden"}">${item.tr}</p>
   `;
 }
@@ -166,9 +213,9 @@ function renderListening() {
   const item = currentListeningItem;
   listeningCard.innerHTML = `
     <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
-    <h2>${item.title}</h2>
+    <h2>${wrapWords(item.title)}</h2>
     <h3>${item.titleTr}</h3>
-    <p class="en-text listening-text ${toggleListeningText.checked ? "" : "hidden"}">${item.en}</p>
+    <p class="en-text listening-text ${toggleListeningText.checked ? "" : "hidden"}">${wrapWords(item.en)}</p>
   `;
 }
 
