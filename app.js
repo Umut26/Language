@@ -23,17 +23,14 @@ function createBag(items) {
   };
 }
 
-const WORDS_PER_PAGE = 6;
-const wordsBag = createBag(WORDS);
-let paragraphBags = {}; // her kategori filtresi için ayrı torba
-
-function getParagraphBag(filter) {
-  if (!paragraphBags[filter]) {
-    const pool = filter === "all" ? PARAGRAPHS : PARAGRAPHS.filter((p) => p.category === filter);
-    paragraphBags[filter] = createBag(pool);
-  }
-  return paragraphBags[filter];
+function poolFor(filter) {
+  return filter === "all" ? PARAGRAPHS : PARAGRAPHS.filter((p) => p.category === filter);
 }
+
+const categoryLabels = {
+  story: "Hikaye",
+  engineering: "Mühendislik",
+};
 
 // ---- Sekme geçişi ----
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -50,10 +47,18 @@ tabButtons.forEach((btn) => {
     btn.classList.add("active");
     btn.setAttribute("aria-selected", "true");
     document.getElementById(btn.dataset.tab).classList.add("active");
+
+    if (btn.dataset.tab !== "listening") {
+      speechSynthesis.cancel();
+      setPlayButtonState(false);
+    }
   });
 });
 
-// ---- Kelimeler sekmesi ----
+// ---- Words sekmesi ----
+const WORDS_PER_PAGE = 6;
+const wordsBag = createBag(WORDS);
+
 const wordsGrid = document.getElementById("words-grid");
 const toggleTr = document.getElementById("toggle-tr");
 const refreshWordsBtn = document.getElementById("refresh-words");
@@ -93,45 +98,117 @@ toggleTr.addEventListener("change", () => {
   });
 });
 
-// ---- Paragraflar sekmesi ----
-const paragraphCard = document.getElementById("paragraph-card");
-const refreshParagraphBtn = document.getElementById("refresh-paragraph");
-const toggleParagraphTr = document.getElementById("toggle-paragraph-tr");
-const filterButtons = document.querySelectorAll(".filter-btn");
-let currentFilter = "all";
+// ---- Reading sekmesi ----
+let readingBags = {};
+function getReadingBag(filter) {
+  if (!readingBags[filter]) readingBags[filter] = createBag(poolFor(filter));
+  return readingBags[filter];
+}
 
-const categoryLabels = {
-  story: "Hikaye",
-  engineering: "Mühendislik",
-};
+const readingCard = document.getElementById("reading-card");
+const refreshReadingBtn = document.getElementById("refresh-reading");
+const toggleReadingTr = document.getElementById("toggle-reading-tr");
+const readingFilterButtons = document.querySelectorAll("#reading .filter-btn");
+let currentReadingFilter = "all";
 
-function renderParagraph() {
-  const [item] = getParagraphBag(currentFilter).draw(1);
-  paragraphCard.innerHTML = `
+function renderReading() {
+  const [item] = getReadingBag(currentReadingFilter).draw(1);
+  readingCard.innerHTML = `
     <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
     <h2>${item.title}</h2>
     <h3>${item.titleTr}</h3>
     <p class="en-text">${item.en}</p>
-    <p class="tr-text ${toggleParagraphTr.checked ? "" : "hidden"}">${item.tr}</p>
+    <p class="tr-text ${toggleReadingTr.checked ? "" : "hidden"}">${item.tr}</p>
   `;
 }
 
-refreshParagraphBtn.addEventListener("click", renderParagraph);
+refreshReadingBtn.addEventListener("click", renderReading);
 
-toggleParagraphTr.addEventListener("change", () => {
-  const trText = paragraphCard.querySelector(".tr-text");
-  if (trText) trText.classList.toggle("hidden", !toggleParagraphTr.checked);
+toggleReadingTr.addEventListener("change", () => {
+  const trText = readingCard.querySelector(".tr-text");
+  if (trText) trText.classList.toggle("hidden", !toggleReadingTr.checked);
 });
 
-filterButtons.forEach((btn) => {
+readingFilterButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    filterButtons.forEach((b) => b.classList.remove("active"));
+    readingFilterButtons.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    currentFilter = btn.dataset.filter;
-    renderParagraph();
+    currentReadingFilter = btn.dataset.filter;
+    renderReading();
+  });
+});
+
+// ---- Listening sekmesi ----
+let listeningBags = {};
+function getListeningBag(filter) {
+  if (!listeningBags[filter]) listeningBags[filter] = createBag(poolFor(filter));
+  return listeningBags[filter];
+}
+
+const listeningCard = document.getElementById("listening-card");
+const refreshListeningBtn = document.getElementById("refresh-listening");
+const playListeningBtn = document.getElementById("play-listening");
+const toggleListeningText = document.getElementById("toggle-listening-text");
+const listeningFilterButtons = document.querySelectorAll("#listening .filter-btn");
+let currentListeningFilter = "all";
+let currentListeningItem = null;
+
+const speechSupported = "speechSynthesis" in window;
+
+function setPlayButtonState(isSpeaking) {
+  playListeningBtn.textContent = isSpeaking ? "⏹️ Durdur" : "▶️ Dinle";
+}
+
+function renderListening() {
+  speechSynthesis.cancel();
+  setPlayButtonState(false);
+  [currentListeningItem] = getListeningBag(currentListeningFilter).draw(1);
+  const item = currentListeningItem;
+  listeningCard.innerHTML = `
+    <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
+    <h2>${item.title}</h2>
+    <h3>${item.titleTr}</h3>
+    <p class="en-text listening-text ${toggleListeningText.checked ? "" : "hidden"}">${item.en}</p>
+  `;
+}
+
+function toggleSpeech() {
+  if (!speechSupported) {
+    alert("Tarayıcınız sesli okumayı desteklemiyor.");
+    return;
+  }
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    setPlayButtonState(false);
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(currentListeningItem.en);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.onend = () => setPlayButtonState(false);
+  utterance.onerror = () => setPlayButtonState(false);
+  speechSynthesis.speak(utterance);
+  setPlayButtonState(true);
+}
+
+refreshListeningBtn.addEventListener("click", renderListening);
+playListeningBtn.addEventListener("click", toggleSpeech);
+
+toggleListeningText.addEventListener("change", () => {
+  const text = listeningCard.querySelector(".listening-text");
+  if (text) text.classList.toggle("hidden", !toggleListeningText.checked);
+});
+
+listeningFilterButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    listeningFilterButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentListeningFilter = btn.dataset.filter;
+    renderListening();
   });
 });
 
 // ---- İlk yükleme ----
 renderWords();
-renderParagraph();
+renderReading();
+renderListening();

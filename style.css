@@ -143,6 +143,16 @@ main {
   content: "";
 }
 
+.play-btn {
+  background: linear-gradient(135deg, var(--green), #2bb673);
+}
+
+.listening-hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: -8px 0 18px;
+}
+
 .toggle {
   display: flex;
   align-items: center;
