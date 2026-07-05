@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>İngilizce Öğreniyorum — B1</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🇬🇧 İngilizce Öğreniyorum <span class="level-badge">B1</span></h1>
+    <p class="subtitle">Kelimeler ve paragraflarla günlük pratik yap</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="words" role="tab" aria-selected="true">📚 Kelimeler</button>
+    <button class="tab-btn" data-tab="paragraphs" role="tab" aria-selected="false">📖 Paragraflar</button>
+  </nav>
+
+  <main>
+    <!-- KELİMELER SEKMESİ -->
+    <section id="words" class="tab-panel active">
+      <div class="toolbar">
+        <button id="refresh-words" class="refresh-btn">🔄 Yenile</button>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-tr" checked />
+          Türkçe anlamları göster
+        </label>
+      </div>
+      <div id="words-grid" class="words-grid"></div>
+    </section>
+
+    <!-- PARAGRAFLAR SEKMESİ -->
+    <section id="paragraphs" class="tab-panel">
+      <div class="toolbar">
+        <button id="refresh-paragraph" class="refresh-btn">🔄 Yenile</button>
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">Tümü</button>
+          <button class="filter-btn" data-filter="story">Hikayeler</button>
+          <button class="filter-btn" data-filter="engineering">Mühendislik</button>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-paragraph-tr" checked />
+          Çeviriyi göster
+        </label>
+      </div>
+      <div id="paragraph-card" class="paragraph-card"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Her yenilemede yeni kelimeler ve paragraflar gösterilir. Havuzdaki tüm içerik gösterilmeden tekrar etmez.</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
