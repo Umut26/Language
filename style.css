@@ -280,6 +280,7 @@ main {
 
 .badge.story { background: rgba(124, 92, 255, 0.15); color: var(--accent-2); }
 .badge.engineering { background: rgba(61, 220, 151, 0.15); color: var(--green); }
+.badge.technology { background: rgba(91, 140, 255, 0.15); color: var(--accent); }
 
 .paragraph-card h2 {
   margin: 0 0 4px;

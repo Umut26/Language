@@ -30,6 +30,7 @@ function poolFor(filter) {
 const categoryLabels = {
   story: "Hikaye",
   engineering: "Mühendislik",
+  technology: "Teknoloji",
 };
 
 // ---- Kelime tıklama: metindeki her kelimeyi tıklanabilir yapar ----
