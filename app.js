@@ -23,8 +23,12 @@ function createBag(items) {
   };
 }
 
-function poolFor(filter) {
-  return filter === "all" ? PARAGRAPHS : PARAGRAPHS.filter((p) => p.category === filter);
+function matchesLevel(item, level) {
+  return level === "all" || item.level === level;
+}
+
+function poolFor(filter, level) {
+  return PARAGRAPHS.filter((p) => (filter === "all" || p.category === filter) && matchesLevel(p, level));
 }
 
 const categoryLabels = {
@@ -32,6 +36,21 @@ const categoryLabels = {
   engineering: "Mühendislik",
   technology: "Teknoloji",
 };
+
+// ---- Seviye seçici: Words, Reading ve Listening sekmelerini birlikte etkiler ----
+let currentLevel = "all";
+const levelButtons = document.querySelectorAll(".level-btn");
+
+levelButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    levelButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLevel = btn.dataset.level;
+    renderWords();
+    renderReading();
+    renderListening();
+  });
+});
 
 // ---- Kelime tıklama: metindeki her kelimeyi tıklanabilir yapar ----
 function translateWord(word) {
@@ -105,7 +124,14 @@ tabButtons.forEach((btn) => {
 
 // ---- Words sekmesi ----
 const WORDS_PER_PAGE = 6;
-const wordsBag = createBag(WORDS);
+let wordsBags = {};
+function getWordsBag(level) {
+  if (!wordsBags[level]) {
+    const pool = level === "all" ? WORDS : WORDS.filter((w) => w.level === level);
+    wordsBags[level] = createBag(pool);
+  }
+  return wordsBags[level];
+}
 
 const wordsGrid = document.getElementById("words-grid");
 const toggleTr = document.getElementById("toggle-tr");
@@ -115,7 +141,7 @@ function renderWordCard(item) {
   const card = document.createElement("div");
   card.className = "word-card";
   card.innerHTML = `
-    <p class="en-word"><span class="w" data-tr="${item.tr}">${item.word}</span></p>
+    <p class="en-word"><span class="w" data-tr="${item.tr}">${item.word}</span><span class="level-tag ${item.level.toLowerCase()}">${item.level}</span></p>
     <p class="tr-word ${toggleTr.checked ? "" : "hidden"}">${item.tr}</p>
     <div class="word-row">
       <span>Eş anlamlı:</span>
@@ -134,7 +160,7 @@ function renderWordCard(item) {
 }
 
 function renderWords() {
-  const picked = wordsBag.draw(WORDS_PER_PAGE);
+  const picked = getWordsBag(currentLevel).draw(WORDS_PER_PAGE);
   wordsGrid.innerHTML = "";
   picked.forEach((item) => wordsGrid.appendChild(renderWordCard(item)));
 }
@@ -148,9 +174,10 @@ toggleTr.addEventListener("change", () => {
 
 // ---- Reading sekmesi ----
 let readingBags = {};
-function getReadingBag(filter) {
-  if (!readingBags[filter]) readingBags[filter] = createBag(poolFor(filter));
-  return readingBags[filter];
+function getReadingBag(filter, level) {
+  const key = `${level}-${filter}`;
+  if (!readingBags[key]) readingBags[key] = createBag(poolFor(filter, level));
+  return readingBags[key];
 }
 
 const readingCard = document.getElementById("reading-card");
@@ -160,9 +187,10 @@ const readingFilterButtons = document.querySelectorAll("#reading .filter-btn");
 let currentReadingFilter = "all";
 
 function renderReading() {
-  const [item] = getReadingBag(currentReadingFilter).draw(1);
+  const [item] = getReadingBag(currentReadingFilter, currentLevel).draw(1);
   readingCard.innerHTML = `
     <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
+    <span class="level-tag ${item.level.toLowerCase()}">${item.level}</span>
     <h2>${wrapWords(item.title)}</h2>
     <h3>${item.titleTr}</h3>
     <p class="en-text">${wrapWords(item.en)}</p>
@@ -188,9 +216,10 @@ readingFilterButtons.forEach((btn) => {
 
 // ---- Listening sekmesi ----
 let listeningBags = {};
-function getListeningBag(filter) {
-  if (!listeningBags[filter]) listeningBags[filter] = createBag(poolFor(filter));
-  return listeningBags[filter];
+function getListeningBag(filter, level) {
+  const key = `${level}-${filter}`;
+  if (!listeningBags[key]) listeningBags[key] = createBag(poolFor(filter, level));
+  return listeningBags[key];
 }
 
 const listeningCard = document.getElementById("listening-card");
@@ -210,10 +239,11 @@ function setPlayButtonState(isSpeaking) {
 function renderListening() {
   speechSynthesis.cancel();
   setPlayButtonState(false);
-  [currentListeningItem] = getListeningBag(currentListeningFilter).draw(1);
+  [currentListeningItem] = getListeningBag(currentListeningFilter, currentLevel).draw(1);
   const item = currentListeningItem;
   listeningCard.innerHTML = `
     <span class="badge ${item.category}">${categoryLabels[item.category]}</span>
+    <span class="level-tag ${item.level.toLowerCase()}">${item.level}</span>
     <h2>${wrapWords(item.title)}</h2>
     <h3>${item.titleTr}</h3>
     <p class="en-text listening-text ${toggleListeningText.checked ? "" : "hidden"}">${wrapWords(item.en)}</p>
